@@ -1,10 +1,10 @@
 <template>
 
-<div class="category-wrapper">
+<div class="category-wrapper" align="center">
         <div class="category-reorder">
 
             <span class="cate-top" style="float:left">
-            <span class="sum-cate">共有<span style="color:red">{{catesCount}}</span> 个分类 </span>                       
+            <span class="sum-cate">共有 <span style="color:red">{{catesCount}}</span> 个分类 </span>                       
           </span>
           <el-button style="float:right" @click="addCate" size="mini" type="primary" plain>添加分类</el-button>
         
@@ -16,45 +16,57 @@
     stripe
     style="width: 100%;">
     <el-table-column
-      prop="_id"
-      label="ID"
-      width="160">
+        align="center"          
+      type="index"
+      width="100">
     </el-table-column>
     <el-table-column
       prop="catename"
       label="分类名称"
        width="320">
     </el-table-column>
-    <el-table-column
-      prop="sum"
-      label="文章总量"
-      width="240"
-      >
-    </el-table-column>
 
-
-
-    <el-table-column
+      <el-table-column
       label="封面"
-      width="220"
+      width="140"
       >
        <template slot-scope="scope">
          <img class="img" :src="scope.row.cateurl" alt="">
        </template>
     </el-table-column>
 
-   
+    <el-table-column
+        align="center"      
+      prop="sum"
+      label="文章总量"
+      width="180"
+      >
+    </el-table-column>
+
+
+    <el-table-column
+        align="center"          
+      prop="cateindex"
+      label="层次"
+      width="180"
+      >
+    </el-table-column>
+
 
      <el-table-column
-     width="280"
+        align="center"           
+     width="300"
       label="操作">
       <template slot-scope="scope">
           <!-- @click="handleEdit(scope.$index, scope.row)"         -->
         <el-button
+          :disabled="scope.row.catename=='ساغلاملىق'"
           size="mini"
           type="primary"
+          @click="editCate(scope.row._id)"
           >编辑</el-button>
          <el-button
+         :disabled="scope.row.catename=='ساغلاملىق'"
           size="mini"
           type="danger"
           @click="delCate(scope.row._id)"
@@ -68,7 +80,11 @@
 
   <el-form :model="cateAddform" :rules="cateAddrules" ref="cateAddform">
     <el-form-item label="分类名称" label-width="120px" prop="catename">
-      <el-input v-model="cateAddform.catename" autocomplete="off"></el-input>
+      <el-input placeholder="请输入分类名称" v-model="cateAddform.catename" autocomplete="off"></el-input>
+    </el-form-item>
+
+    <el-form-item  label="层次" label-width="120px" prop="cateindex">
+      <el-input placeholder="请输入分类层次数（数字越小，层次越高!）" type="number" v-model="cateAddform.cateindex" autocomplete="off"></el-input>
     </el-form-item>
 
     <el-form-item label="分类封面Url" label-width="120px" prop="cateurl">
@@ -78,7 +94,7 @@
     <el-upload
       ref="cateupload"
       :on-remove="removepic"
-      style="marginLeft:120px"
+      style="textAlign:left;marginLeft:120px"
       :limit='1'
       class="avatar-uploader"
       action="http://localhost:8888/api/upload/catpic"
@@ -97,6 +113,45 @@
   </div>
 </el-dialog>
 
+
+<el-dialog title="编辑分类" :visible.sync="editFormVisible" @close="editcloseEvent">
+
+  <el-form :model="cateEditform" :rules="cateEditrules" ref="cateEditform">
+    <el-form-item label="分类" label-width="120px" prop="catename">
+      <el-input placeholder="请输入分类名称" v-model="cateEditform.catename" autocomplete="off"></el-input>
+    </el-form-item>
+
+    <el-form-item  label="层次" label-width="120px" prop="cateindex">
+      <el-input placeholder="请输入分类层次数（数字越小，层次越高!）" type="number"
+       v-model="cateEditform.cateindex" autocomplete="off"></el-input>
+    </el-form-item>
+
+    <el-form-item label="分类封面Url" label-width="120px" prop="cateurl">
+      <el-input disabled v-model="cateEditform.cateurl" autocomplete="off"></el-input>
+    </el-form-item>
+
+    <el-upload
+      ref="cateEditupload"
+      :on-remove="removepic"
+      style="textAlign:left;marginLeft:120px"
+      :limit='1'
+      class="avatar-uploader"
+      action="http://localhost:8888/api/upload/catpic"
+      :on-success="EditAvatarSuccess"
+      :before-upload="beforeAvatarUpload">
+      <img v-if="imageUrl" :src="imageUrl" class="avatar">
+      <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+    </el-upload>
+
+
+
+  </el-form>
+  <div slot="footer" class="dialog-footer">
+    <el-button @click="editFormVisible = false">取 消</el-button>
+    <el-button type="primary" @click="submitEditcate">确定</el-button>
+  </div>
+</el-dialog>
+
   </div>
 </template>
 
@@ -110,6 +165,7 @@ export default {
       ifdelete:'',
       cateAddform: {
           catename: '',
+          cateindex:'',
           cateurl:''
         },
       cateAddrules: {
@@ -119,6 +175,31 @@ export default {
         catename: [
           { required: true, message: '请输入分类名称', trigger: 'blur' },
           { min: 3, max:30, message: '长度在 2 到 30 个字符', trigger: 'blur' }
+        ],
+        cateindex: [
+          { required: true, message: '请输入分类index数字！', trigger: 'blur' },
+          { min: 1, max:2, message: '必须是1到99之间的数字', trigger: 'blur' }
+        ]
+     
+      },
+      editFormVisible:false,
+       cateEditform: {
+          catename:'',
+          cateindex:'',
+          cateurl:'',
+          _id:''
+        },
+      cateEditrules: {
+         cateurl:[
+        {required:true,message:"请上传图片",trigger: 'blur'}
+        ],
+        catename: [
+          { required: true, message: '请输入分类名称', trigger: 'blur' },
+          { min: 3, max:30, message: '长度在 2 到 30 个字符', trigger: 'blur' }
+        ],
+        cateindex: [
+          { required: true, message: '请输入分类index数字！', trigger: 'blur' },
+          { min: 1, max:2, message: '必须是1到99之间的数字', trigger: 'blur' }
         ]
      
       },
@@ -127,6 +208,7 @@ export default {
   },
   created(){
     this.getAllcates()
+
   },
   methods:{
     async getAllcates(){
@@ -137,13 +219,61 @@ export default {
       }else{
       console.log(res.data.err)        
       }
-      console.log(res)
+      // console.log(res)
     },
     getImg(url){
       return require("@/assets/"+url)
     },
-    async delCate(id){
-      console.log(id)
+    async editCate(id){
+      this.editFormVisible=true  
+      var res = await this.$http.get('/getonecate',{
+        params:{
+          id:id
+        }
+      })
+      if(res.data.status=="200"){
+      // console.log(res.data.data[0])        
+       this.cateEditform = res.data.data[0]   
+       this.imageUrl = res.data.data[0].cateurl
+      }else{
+      console.log("获取数据失败")        
+      }
+    },
+      delCate(id){
+
+      this.$confirm('此操作将永久删除该分类, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+            this.$http.get('/delcate',{
+              params:{
+                id:id
+              }
+            })
+            .then(res => {
+               if(res.data.status==200){
+               this.$message({
+                  message: res.data.msg,
+                  type: 'success'
+               })
+               this.getAllcates();        
+               }else{
+               this.$message({
+                  message: res.data.msg,
+                  type: 'error'
+               })
+             }
+            })
+            
+        }).catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消删除'
+          });          
+        });
+   
+
     },
 
     async removepic() {
@@ -155,6 +285,7 @@ export default {
       })
       this.ifdelete=''
       this.cateAddform.cateurl=''
+      this.cateEditform.cateurl=''
       this.imageUrl=''
 
       
@@ -163,11 +294,49 @@ export default {
     addCate(){
       this.addFormVisible=true      
     },
+    editcloseEvent(){
+      this.$refs.cateEditupload.clearFiles();
+      this.$refs.cateEditform.resetFields();
+      this.ifdelete=''
+      this.imageUrl=''
+    },
     closeEvent(){
       this.$refs.cateupload.clearFiles();
       this.$refs.cateAddform.resetFields();
       this.ifdelete=''
       this.imageUrl=''
+    },
+    submitEditcate(){
+      this.$refs.cateEditform.validate(valid => {
+
+             if (valid) {
+                 this.$http.get(`/updatecate/${this.cateEditform._id}`,{
+                   params :{
+                     catename:this.cateEditform.catename,
+                     cateurl:this.cateEditform.cateurl,
+                     cateindex:this.cateEditform.cateindex
+                   }
+                   }).then(res => {
+                     if(res.data.status==200){                 
+                        this.$message({
+                        message: res.data.msg,
+                        type: 'success'
+                      })
+                      this.getAllcates()
+                      this.editFormVisible=false
+                     }else{
+                        this.$message({
+                          message: res.data.msg,
+                          type: 'error'
+                       })
+                     }
+                   })
+             } else {
+               // 校验失败
+               console.log("校验失败")
+               return false
+             }
+           })
     },
     submitNewcate(){
       // ref 用在组件中，就表示当前组件
@@ -179,10 +348,10 @@ export default {
             this.$http.get('/addcate',{
               params :{
                 catename:this.cateAddform.catename,
-                cateurl:this.cateAddform.cateurl
+                cateurl:this.cateAddform.cateurl,
+                cateindex:this.cateAddform.cateindex
               }
               }).then(res => {
-                  console.log(res)
                 if(res.data.status==200){                 
                    this.$message({
                    message: res.data.msg,
@@ -205,6 +374,20 @@ export default {
       })
   
     },
+    EditAvatarSuccess(res,file){
+     console.log(res,file)
+        if(res.status==200){
+          this.cateEditform.cateurl=res.data
+          this.ifdelete=res.ifdelete
+          this.imageUrl = URL.createObjectURL(file.raw);
+        }else{
+           this.$message({
+             message:"上传图片失败！",
+             type:"error"
+           })
+        }
+       
+    },
     handleAvatarSuccess(res, file) {
         console.log(res,file)
         if(res.status==200){
@@ -212,7 +395,10 @@ export default {
           this.ifdelete=res.ifdelete
           this.imageUrl = URL.createObjectURL(file.raw);
         }else{
-           this.$message.error('上传图片失败！');
+          this.$message({
+             message:"上传图片失败！",
+             type:"error"
+           })
         }
        
       },
@@ -250,7 +436,7 @@ export default {
 .img{
   width: 70px;
   height: 70px;
-  border-radius: 10%;
+  border-radius: 50%;
 }
 
 

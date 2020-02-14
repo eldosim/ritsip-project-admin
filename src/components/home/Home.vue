@@ -17,6 +17,7 @@
   </el-submenu>
   <el-menu-item index="/home/category">分类管理</el-menu-item>  
   <el-menu-item index="/home/users">用户管理</el-menu-item>
+  <el-menu-item index="/home/banner">轮播图管理</el-menu-item>
 
 </el-menu>
 <div class="line" ></div>

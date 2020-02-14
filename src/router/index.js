@@ -8,6 +8,7 @@ import All from '@/components/all/All'
 import Pays from '@/components/pays/Pays'
 import Category from '@/components/category/Category'
 import Users from '@/components/users/Users'
+import Banner from '@/components/banner/Banner'
 
 Vue.use(Router)
 
@@ -26,7 +27,8 @@ export default new Router({
         {path:"all",component:All},
         {path:"pays",component:Pays},
         {path:"category",component:Category},
-        {path:"users",component:Users}        
+        {path:"users",component:Users},      
+        {path:"banner",component:Banner}
       ]
     }
   ]

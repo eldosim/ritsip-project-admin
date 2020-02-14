@@ -1,4 +1,5 @@
 <template>
+
   <div class="all-wrapper">
     <div class="all-aside">
       <el-menu
@@ -55,8 +56,21 @@
       align="center"                 
       prop="artname"
       label="标题"
-       width="360">
+       width="280">
     </el-table-column>
+
+    <el-table-column
+      align="center"                     
+      label="封面"
+      width="62"
+      >
+       <template slot-scope="scope">
+         <img class="artimg" :src="scope.row.arturl" alt="">
+       </template>
+    </el-table-column>
+
+
+
     <el-table-column
       align="center"
       :formatter="formatCate"    
@@ -69,7 +83,7 @@
       align="center"    
       prop="arttime"
       label="日期"
-      width="84"
+      width="100"
       :formatter="formatTime"
       >
     </el-table-column>
@@ -145,7 +159,17 @@
       </template>
     </el-table-column>
   </el-table>
+  <el-pagination
+     class="mypage"
+     background
+     @current-change="handleCurrentChange"
+     :current-page.sync="currentPage"
+     layout="total,prev, pager, next"
+     :page-size="pageSize"
+     :total="total">     
+  </el-pagination>
     </div>
+
 
     <!-- ========================编辑文章========================== -->
 
@@ -222,7 +246,7 @@
 
 </el-dialog>
     <!-- ========================编辑文章========================== -->
-
+ 
   </div>
 </template>
 
@@ -230,6 +254,9 @@
 export default {
  data() {
       return {
+        pageSize:3,
+        total:0,
+        currentPage:1,
         // 以下是编辑文章对话框数据
         ifdelete:'',
         imageUrl:'',
@@ -281,12 +308,18 @@ export default {
     },
     methods:{
     // =====================methods===========================
+    // 分页功能
+     handleCurrentChange(val) {
+         this.currentPage = val
+         
+         this.getArticles()
+      },
+    
     // 编辑文章-----------------------------------------
     async editBtn(id){
       this.editFormVisible=true
       var res = await this.$http.get('/getoneart',{params:{id:id}})
       if(res.data.status==200){
-        console.log(res)
         this.addForm = res.data.data
         this.imageUrl = res.data.data.arturl
       }else{
@@ -304,12 +337,12 @@ export default {
             this.submitbtn=true            
             this.$http.post(`/updateart/${this.addForm._id}`,this.addForm)
             .then(res => {
-              console.log(res)
               if(res.data.status==200){                 
                   this.$message({
                   message: res.data.msg,
                   type: 'success'
                 })      
+                 this.currentPage=1  
                  this.getAllcates()           
                  this.$refs.artupload.clearFiles();
                  this.$refs.addForm.resetFields();
@@ -378,7 +411,6 @@ export default {
     },
       // 上传图片后调用====================
       handleAvatarSuccess(res, file){
-        console.log(res)
         if(res.status==200){
           this.addForm.arturl=res.data
           this.ifdelete=res.ifdelete
@@ -394,7 +426,6 @@ export default {
       beforeAvatarUpload(file) {
         const isJPG = file.type === 'image/jpeg' || 
         file.type === 'image/png' || file.type === 'image/x-png' || file.type === 'image/pjpeg';
-        console.log(file.size)
         const isLt2M = file.size / 1024 / 1024 < 1; 
         if (!isJPG) {
           this.$message.error('上传图片格式错误!');
@@ -464,6 +495,7 @@ export default {
     },
     // 根据activeindex获取分类id并发送请求
     changecate(id){
+      this.currentPage=1
       if(this.sort == 'rec'){
         this.sort = 'time'
       }
@@ -494,6 +526,7 @@ export default {
     },
     // 根据参数改排序方式并发请求
     sortby(how){
+      this.currentPage=1      
       if(how == 'rec'){
         this.activecateid = 'all'
         this.activeindex = 'all'
@@ -517,9 +550,12 @@ export default {
         params:{
           sort:this.sort,
           cateid:this.activecateid,
-          search:this.search
+          search:this.search,
+          page:this.currentPage,
+          size:this.pageSize
         }
       })
+      this.total = res.data.curcount
       this.tableData = res.data.data
       this.allCount = res.data.allcount
       if(how=='rec'){
@@ -528,7 +564,6 @@ export default {
       if(how=='key'){
         this.keyResult = res.data.curcount
       }
-      console.log(res)
     },
     // 获取侧边分类
     async getAllcates(){
@@ -542,8 +577,9 @@ export default {
     // 格式化日期时间
     formatTime(row, column) {
         const date = new Date(row[column.property])
+        var month =  date.getMonth() + 1
         return date.getFullYear() + '-' +
-          date.getMonth() + '-' +
+          month + '-' +
           date.getDate() //+ '- ' +
           // date.getHours() + ':' +
           // date.getMinutes()
@@ -564,6 +600,7 @@ export default {
 
   background-color: #F8F9FB;
   display: flex;
+
 }
 
 .all-wrapper .all-main{
@@ -638,6 +675,17 @@ export default {
     width: 120px;
     height: 120px;
     display: block;
+  }
+
+  .artimg{
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+  }
+
+  .mypage{
+    text-align: center;
+    margin: 20px 0 60px 0;
   }
 
 </style>

@@ -2,9 +2,9 @@
   <div class="pays-wrapper">
         <div class="pays-reorder">
 
-          <el-button @click="getAllpays('time')" size="mini" type="success" plain>按时间排序</el-button>
-          <el-button @click="getAllpays('hot')" size="mini" type="danger" plain>按热度排序</el-button>
-          <el-button @click="getAllpays('sold')" size="mini" type="primary" plain>按购买量排序</el-button>
+          <el-button @click="paysSortby('time')" size="mini" type="success" plain>按时间排序</el-button>
+          <el-button @click="paysSortby('hot')" size="mini" type="danger" plain>按热度排序</el-button>
+          <el-button @click="paysSortby('sold')" size="mini" type="primary" plain>按购买量排序</el-button>
 
           <span class="statistic">
             <span class="sum-article">有 <span style="color:red">{{soldartCount}}</span> 篇付费文章 </span>            
@@ -30,7 +30,17 @@
       align="center"                 
       prop="artname"
       label="标题"
-       width="380">
+       width="360">
+    </el-table-column>
+
+    <el-table-column
+      align="center"                     
+      label="封面"
+      width="62"
+      >
+       <template slot-scope="scope">
+         <img class="artimg" :src="scope.row.arturl" alt="">
+       </template>
     </el-table-column>
 
     <el-table-column
@@ -56,7 +66,7 @@
      :formatter="formatYuan"
       prop="artprice"
       label="价格"
-      width="86"
+      width="80"
       >
     </el-table-column>
     <el-table-column
@@ -118,7 +128,7 @@
 
      <el-table-column
      align="center"  
-     width="140"
+     width="100"
       label="操作">
       <template slot-scope="scope">
           <!-- @click="handleEdit(scope.$index, scope.row)"         -->
@@ -130,6 +140,15 @@
       </template>
     </el-table-column>
   </el-table>
+    <el-pagination
+     class="mypage"
+     background
+     @current-change="handleCurrentChange"
+     :current-page.sync="currentPage"
+     layout="total,prev, pager, next"
+     :page-size="pageSize"
+     :total="total">     
+  </el-pagination>
   <!-- ============================================================================ -->
   <el-dialog :title="'正在编辑: '+addForm.artname+'('+addForm._id+')'" :visible.sync="editFormVisible" width="94%" @close="closeEvent">
   <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
@@ -214,6 +233,11 @@
 export default {
   data () {
     return {
+       pageSize:3,
+       total:0,
+       currentPage:1,
+       how:'time',
+      // ---------------------
      cates:[],
       ifdelete:'',
       imageUrl:'',
@@ -251,10 +275,15 @@ export default {
     }
   },
   created(){
-    this.getAllpays('time')
+    this.getAllpays()
   },
   methods:{
     // ===================methods======================
+     handleCurrentChange(val) {
+         this.currentPage = val
+         
+         this.getAllpays()
+      },
      // 编辑文章-----------------------------------------
     async editBtn(id){
       this.getcateidname()
@@ -285,7 +314,9 @@ export default {
                   message: res.data.msg,
                   type: 'success'
                 })      
-                 this.getAllpays('time')           
+                 this.how = 'time'
+                 this.currentPage=1  
+                 this.getAllpays()           
                  this.$refs.artupload.clearFiles();
                  this.$refs.addForm.resetFields();
                  this.addForm.artprice='';                               
@@ -385,20 +416,32 @@ export default {
         return isJPG && isLt2M;
       },
     // ----------------------------------------------------编辑完成
-    // 获取所有文章(参数：time，hot，sold)
-    async getAllpays(how){
-      var res = await this.$http.get(`/getsoldart/${how}`)
+     paysSortby(how){
+       this.how = how
+       this.currentPage = 1
+       this.getAllpays()
+     },
+     // 获取所有文章(参数：time，hot，sold)
+    async getAllpays(){
+      var res = await this.$http.get(`/getsoldart/${this.how}`,{
+        params:{
+          page:this.currentPage,
+          size:this.pageSize
+        }
+      })
+      this.total = res.data.count
       this.tableData=res.data.data
       this.soldartCount=res.data.count
     },
     // 格式化日期时间
     formatTime(row, column) {
         const date = new Date(row[column.property])
+        var month =  date.getMonth() + 1
         return date.getFullYear() + '-' +
-          date.getMonth() + '-' +
-          date.getDate() //+ '- ' +
-          // date.getHours() + ':' +
-          // date.getMinutes()
+        month + '-' +
+        date.getDate() //+ '- ' +
+        // date.getHours() + ':' +
+        // date.getMinutes()
     },
     //更换推荐状态 ----------------------------------------------------------
     async recart(id){
@@ -511,5 +554,12 @@ export default {
     width: 120px;
     height: 120px;
     display: block;
+  }
+
+  
+  .artimg{
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
   }
 </style>
